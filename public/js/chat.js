@@ -1,23 +1,51 @@
 const socket = io()
 
-socket.on('message', (message) => {
-    console.log(message)
+const $messageForm = document.querySelector('#messageForm')
+const $messageFormInput = $messageForm.querySelector('input')
+const $messageFormButton = $messageForm.querySelector('button')
+const $sendLocationButton = document.querySelector('#send-location')
+const $messages = document.querySelector('#messages')
+
+const messageTemplate = document.querySelector('#message-template').innerHTML
+const locationMessageTemplate = document.querySelector('#location-message-template').innerHTML
+
+socket.on('locationMessage', (url) => {
+    console.log(url)
+    const html = Mustache.render(locationMessageTemplate, {
+        url
+    })
+    $messages.insertAdjacentHTML('beforeend', html)
 })
 
-document.querySelector('#messageForm').addEventListener('submit', (e) => {
+socket.on('message', (message) => {
+    console.log(message)
+    const html = Mustache.render(messageTemplate, {
+        message
+    })
+    $messages.insertAdjacentHTML('beforeend', html)
+})
+
+$messageForm.addEventListener('submit', (e) => {
     e.preventDefault()
+
+    $messageFormButton.setAttribute('disabled', 'disabled')
 
     const message = e.target.elements.message.value
 
     socket.emit('sendMessage', message, (message) => {
         console.log('Message status ::: ', message)
+        $messageFormButton.removeAttribute('disabled', 'disabled')
+        $messageFormInput.value = ''
+        $messageFormInput.focus()
     })
 })
 
-document.querySelector('#send-location').addEventListener('click', () => {
+$sendLocationButton.addEventListener('click', () => {
     if(!navigator.geolocation){
         return alert('Geolocation is not supported by your browser.')
     }
+
+    $sendLocationButton.setAttribute('disabled', 'disabled')
 
     navigator.geolocation.getCurrentPosition((position) => {
         // console.log(position)
@@ -26,6 +54,7 @@ document.querySelector('#send-location').addEventListener('click', () => {
             longitude: position.coords.longitude
         }, () => {
             console.log('Location shared')
+            $sendLocationButton.removeAttribute('disabled', 'disabled')
         })
     })
 })
